@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>不動産まとめ — 東京・神奈川・千葉</title>
+<title>SUMIKA — 東京・神奈川・千葉</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -122,8 +122,9 @@ select.sort-sel { font-size: 12px; color: var(--text-sub); border: 0.5px solid v
 .card-img .icon { font-size: 30px; color: rgba(0,0,0,0.15); }
 .card-fav { position: absolute; top: 7px; right: 7px; width: 26px; height: 26px; border-radius: 50%; background: var(--surface); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .card-fav:hover { border-color: var(--pink); }
-.card-fav i { font-size: 14px; color: var(--text-hint); }
-.card-fav.faved i { color: var(--pink); }
+.card-fav svg { color: var(--text-hint); }
+.card-fav.faved svg { color: var(--pink); }
+.card-fav.faved { border-color: var(--pink); background: #FFF0F5; }
 .new-label { position: absolute; top: 0; left: 0; background: var(--blue); color: #E6F1FB; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 0 0 6px 0; }
 .type-tag { position: absolute; bottom: 7px; left: 7px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
 .card-body { padding: 10px 11px; flex: 1; }
@@ -178,8 +179,8 @@ select.sort-sel { font-size: 12px; color: var(--text-sub); border: 0.5px solid v
   <div class="header">
     <div class="logo">
       <i data-icon="building-estate"></i>
-      不動産まとめ
-      <span class="logo-sub">東京・神奈川・千葉</span>
+      SUMIKA
+      <span class="logo-sub">新築・分譲物件サーチ</span>
     </div>
     <div class="header-right">
       <span class="updated-badge"><i data-icon="check"></i> <span id="updated-date">読み込み中…</span></span>
@@ -426,7 +427,7 @@ function renderFav() {
   if (!favData.length) {
     el.innerHTML = '<div class="fav-empty"><i data-icon="heart"></i>一覧の ♡ ボタンでお気に入りに追加できます</div>';
   } else {
-    el.innerHTML = `<div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;">${favData.length}件のお気に入り</div><div class="card-grid">${favData.map(p=>cardHTML(p,false)).join('')}</div>`;
+    el.innerHTML = `<div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;">${favData.length}件のお気に入り</div><div class="card-grid">${favData.map(p=>cardHTML(p,true)).join('')}</div>`;
   }
   applyIcons(el);
 }
