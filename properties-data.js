@@ -65,7 +65,8 @@ const PROPERTIES_DATA = [
     "completion": "販売中",
     "isNew": true,
     "bg": "#E1F5EE",
-    "url": "https://www.sekisuihouse.co.jp/bunjou/1/14216/b348005/s311002/00015089/06top.html"
+    "url": "https://www.sekisuihouse.co.jp/bunjou/1/14216/b348005/s311002/00015089/06top.html",
+    "img": "https://www.sekisuihouse.co.jp/bunjouimage/bukken-pub/00015089/360911/%E3%80%90%E5%86%99%E7%9C%9F%E3%80%91CS%E5%B0%8F%E7%94%B0%E6%80%A5%E7%9B%B8%E6%A8%A1%E5%8E%9F_%E3%83%A1%E3%82%A4%E3%83%B3_260608.jpg"
   },
   {
     "id": 6,
@@ -99,7 +100,8 @@ const PROPERTIES_DATA = [
     "completion": "販売中",
     "isNew": false,
     "bg": "#E1F5EE",
-    "url": "https://www.sekisuihouse.co.jp/bunjou/0/14212/b348005/s311002/00014731/06top.html"
+    "url": "https://www.sekisuihouse.co.jp/bunjou/0/14212/b348005/s311002/00014731/06top.html",
+    "img": "https://www.sekisuihouse.co.jp/bunjouimage/bukken-pub/00014731/337099/BukkenMain_1756466681.jpg"
   },
   {
     "id": 8,
@@ -337,7 +339,8 @@ const PROPERTIES_DATA = [
     "completion": "乾太くん・電気錠門扉標準",
     "isNew": true,
     "bg": "#EEEDFE",
-    "url": "https://www.proud-web.jp/house/d123320/"
+    "url": "https://www.proud-web.jp/house/d123320/",
+    "img": "https://www.proud-web.jp/house/d123320/ogp/index.jpg"
   },
   {
     "id": 23,
@@ -490,7 +493,8 @@ const PROPERTIES_DATA = [
     "completion": "モデルハウスオープン中・最終1邸",
     "isNew": true,
     "bg": "#EEEDFE",
-    "url": "https://www.grandy.jp/tokyoto/nerimaku/estate/3380"
+    "url": "https://www.grandy.jp/tokyoto/nerimaku/estate/3380",
+    "img": "https://www.grandy.jp/_upload/lot/250000_takumi_kichijyoji_cultivatedsection_concept01.jpg"
   },
   {
     "id": 32,
@@ -507,7 +511,8 @@ const PROPERTIES_DATA = [
     "completion": "モデルハウスオープン中・最終1邸",
     "isNew": true,
     "bg": "#EEEDFE",
-    "url": "https://www.grandy.jp/tokyoto/nishitokyoshi/estate/3559"
+    "url": "https://www.grandy.jp/tokyoto/nishitokyoshi/estate/3559",
+    "img": "https://www.grandy.jp/_upload/lot/260323_rin_hibarigaoka_concept1.jpg"
   },
   {
     "id": 33,
@@ -541,7 +546,8 @@ const PROPERTIES_DATA = [
     "completion": "販売中・残1区画",
     "isNew": true,
     "bg": "#E1F5EE",
-    "url": "https://www.sekisuihouse.co.jp/bunjou/0/14112/b348005/s315000/00014919/06top.html"
+    "url": "https://www.sekisuihouse.co.jp/bunjou/0/14112/b348005/s315000/00014919/06top.html",
+    "img": "https://www.sekisuihouse.co.jp/bunjouimage/bukken-pub/00014919/349194/BukkenMain_1764578519.jpg"
   },
   {
     "id": 35,
