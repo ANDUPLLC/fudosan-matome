@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>不動産まとめ — 東京・神奈川・千葉</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.icon { display: inline-block; vertical-align: -0.15em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+:root {
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.1);
+  --border-hover: rgba(0,0,0,0.22);
+  --text: #1a1a1a;
+  --text-sub: #666;
+  --text-hint: #999;
+  --blue: #185FA5;
+  --blue-light: #E6F1FB;
+  --blue-mid: #85B7EB;
+  --green-light: #E1F5EE;
+  --green: #0F6E56;
+  --amber-light: #FAEEDA;
+  --amber: #854F0B;
+  --purple-light: #EEEDFE;
+  --purple: #534AB7;
+  --pink: #D4537E;
+  --success-bg: #EAF3DE;
+  --success: #3B6D11;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --sidebar-w: 220px;
+  --header-h: 52px;
+  --tabbar-h: 42px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; height: 100vh; overflow: hidden; }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Header */
+.header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 20px; height: var(--header-h); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.logo { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.logo i { color: var(--blue); font-size: 22px; }
+.logo-sub { font-size: 12px; color: var(--text-sub); font-weight: 400; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.updated-badge { background: var(--success-bg); color: var(--success); font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 0.5px solid #C0DD97; display: flex; align-items: center; gap: 4px; }
+.btn-primary { background: var(--blue); color: #E6F1FB; border: none; border-radius: var(--radius); padding: 7px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+.btn-primary:hover { background: #0C447C; }
+
+/* Body */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 0.5px solid var(--border); padding: 14px; overflow-y: auto; flex-shrink: 0; }
+.filter-section { margin-bottom: 16px; }
+.filter-label { font-size: 10px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 7px; }
+.chip-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border-hover); color: var(--text-sub); cursor: pointer; background: transparent; user-select: none; }
+.chip:hover { border-color: var(--blue-mid); }
+.chip.active { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+.range-wrap { margin-top: 6px; }
+.range-wrap input[type=range] { width: 100%; accent-color: var(--blue); margin-bottom: 4px; cursor: pointer; }
+.range-val { font-size: 12px; color: var(--text-sub); }
+.range-val span { font-weight: 600; color: var(--text); }
+.divider { border: none; border-top: 0.5px solid var(--border); margin: 4px 0 14px; }
+.site-links { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+.site-link { font-size: 12px; color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+.site-link:hover { text-decoration: underline; }
+
+/* Main panel */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.tab-bar { display: flex; background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 0 16px; height: var(--tabbar-h); flex-shrink: 0; }
+.tab { padding: 0 14px; font-size: 13px; color: var(--text-sub); cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; height: 100%; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.fav-badge { background: var(--pink); color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; display: none; }
+
+/* List view */
+.list-view { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.map-view  { flex: 1; display: none; }
+.fav-view  { flex: 1; overflow-y: auto; padding: 14px 16px; display: none; }
+
+/* Map */
+#map { width: 100%; height: 100%; }
+
+/* Map popup */
+.leaflet-popup-content-wrapper { border-radius: var(--radius-lg); border: 0.5px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 0; overflow: hidden; }
+.leaflet-popup-content { margin: 0; width: 220px !important; }
+.popup-img { height: 72px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: rgba(0,0,0,0.15); }
+.popup-body { padding: 10px 12px 8px; }
+.popup-maker { font-size: 11px; color: var(--text-sub); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+.popup-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+.popup-price { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.popup-meta { font-size: 11px; color: var(--text-sub); }
+.popup-link { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 7px; border-top: 0.5px solid var(--border); font-size: 12px; color: var(--blue); text-decoration: none; margin: 0 -0px; }
+.popup-link:hover { background: var(--blue-light); }
+.popup-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+.tag-house { background: var(--blue-light); color: var(--blue); }
+.tag-land  { background: var(--amber-light); color: var(--amber); }
+
+/* Summary + cards */
+.summary-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.sumcard { flex: 1; background: var(--surface); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 10px 12px; text-align: center; }
+.sumcard-n { font-size: 20px; font-weight: 600; }
+.sumcard-l { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+.ai-banner { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 9px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-sub); margin-bottom: 12px; }
+.ai-banner i { color: var(--blue); font-size: 16px; flex-shrink: 0; }
+.legend { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-sub); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-tokyo    { background: #534AB7; }
+.dot-kanagawa { background: #1D9E75; }
+.dot-chiba    { background: #BA7517; }
+.results-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.results-count { font-size: 13px; color: var(--text-sub); }
+select.sort-sel { font-size: 12px; color: var(--text-sub); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px 10px; background: var(--surface); font-family: inherit; cursor: pointer; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.card { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+.card:hover { border-color: var(--border-hover); }
+.card-img { height: 88px; display: flex; align-items: center; justify-content: center; position: relative; }
+.card-img .icon { font-size: 30px; color: rgba(0,0,0,0.15); }
+.card-fav { position: absolute; top: 7px; right: 7px; width: 26px; height: 26px; border-radius: 50%; background: var(--surface); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.card-fav:hover { border-color: var(--pink); }
+.card-fav i { font-size: 14px; color: var(--text-hint); }
+.card-fav.faved i { color: var(--pink); }
+.new-label { position: absolute; top: 0; left: 0; background: var(--blue); color: #E6F1FB; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 0 0 6px 0; }
+.type-tag { position: absolute; bottom: 7px; left: 7px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.card-body { padding: 10px 11px; flex: 1; }
+.card-maker { font-size: 11px; color: var(--text-sub); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+.card-name { font-size: 12px; font-weight: 600; margin-bottom: 5px; line-height: 1.4; }
+.card-price { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+.card-meta { font-size: 11px; color: var(--text-sub); display: flex; flex-direction: column; gap: 2px; }
+.card-meta span { display: flex; align-items: center; gap: 4px; }
+.card-completion { font-size: 10px; color: var(--text-hint); margin-top: 5px; }
+.card-link { display: flex; align-items: center; justify-content: flex-end; gap: 4px; padding: 7px 11px 9px; border-top: 0.5px solid var(--border); font-size: 12px; color: var(--blue); text-decoration: none; margin-top: auto; }
+.card-link:hover { background: var(--blue-light); }
+.fav-empty { text-align: center; color: var(--text-sub); padding: 60px 20px; }
+.fav-empty i { font-size: 40px; display: block; margin-bottom: 10px; color: var(--text-hint); }
+
+/* Map list panel (slide-over on map) */
+.map-list-panel { position: absolute; top: 10px; right: 10px; width: 260px; background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); z-index: 500; max-height: calc(100% - 20px); display: flex; flex-direction: column; overflow: hidden; }
+.map-list-header { padding: 10px 12px; font-size: 13px; font-weight: 600; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.map-list-body { overflow-y: auto; flex: 1; }
+.map-list-item { padding: 10px 12px; border-bottom: 0.5px solid var(--border); cursor: pointer; display: flex; gap: 10px; align-items: flex-start; }
+.map-list-item:hover { background: var(--bg); }
+.map-list-item.active { background: var(--blue-light); }
+.map-list-icon { width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; color: rgba(0,0,0,0.2); }
+.map-list-info { flex: 1; min-width: 0; }
+.map-list-maker { font-size: 10px; color: var(--text-sub); margin-bottom: 2px; }
+.map-list-name { font-size: 12px; font-weight: 600; line-height: 1.3; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.map-list-price { font-size: 12px; font-weight: 700; }
+
+/* Custom map markers */
+.marker-pin { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.8); cursor: pointer; }
+.marker-pin i { transform: rotate(45deg); width: 14px; height: 14px; color: #fff; }
+.marker-tokyo    { background: #534AB7; }
+.marker-kanagawa { background: #1D9E75; }
+.marker-chiba    { background: #BA7517; }
+.marker-selected { box-shadow: 0 0 0 4px rgba(24,95,165,0.35); }
+
+@media (max-width: 700px) {
+  body { overflow: auto; }
+  .body { flex-direction: column; overflow: visible; }
+  .sidebar { width: 100%; overflow: visible; }
+  .main { overflow: visible; }
+  .list-view, .fav-view { overflow: visible; }
+  .map-view { height: 400px; display: none; }
+  .map-list-panel { display: none; }
+  .logo-sub { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <i data-icon="building-estate"></i>
+      不動産まとめ
+      <span class="logo-sub">東京・神奈川・千葉</span>
+    </div>
+    <div class="header-right">
+      <span class="updated-badge"><i data-icon="check"></i> <span id="updated-date">読み込み中…</span></span>
+      <button class="btn-primary" onclick="alert('このボタンはClaude.aiのチャット内でのみ動作します。\n\nブラウザ単体で開いている場合は、左サイドバーの「ハウスメーカー公式サイト」リンクから直接最新情報をご確認ください。')">
+        <i data-icon="refresh"></i> 最新情報をチェック
+      </button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="filter-section">
+        <div class="filter-label">種別</div>
+        <div class="chip-row">
+          <span class="chip active" data-filter="type" data-value="建売" onclick="toggleChip(this)">建売</span>
+          <span class="chip active" data-filter="type" data-value="土地" onclick="toggleChip(this)">土地</span>
+        </div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-label">エリア</div>
+        <div class="chip-row">
+          <span class="chip active" data-filter="area" data-value="東京"   onclick="toggleChip(this)">東京</span>
+          <span class="chip active" data-filter="area" data-value="神奈川" onclick="toggleChip(this)">神奈川</span>
+          <span class="chip active" data-filter="area" data-value="千葉"   onclick="toggleChip(this)">千葉</span>
+        </div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-label">価格上限</div>
+        <div class="range-wrap">
+          <input type="range" min="2000" max="15000" step="500" value="15000" id="priceRange" oninput="onPriceChange(this.value)">
+          <div class="range-val">〜 <span id="priceLabel">上限なし</span></div>
+        </div>
+      </div>
+      <div class="filter-section">
+        <div class="filter-label">販売会社</div>
+        <div class="chip-row">
+          <span class="chip active" data-filter="maker" data-value="積水ハウス"      onclick="toggleChip(this)">積水ハウス</span>
+          <span class="chip active" data-filter="maker" data-value="大和ハウス"      onclick="toggleChip(this)">大和ハウス</span>
+          <span class="chip active" data-filter="maker" data-value="住友林業"        onclick="toggleChip(this)">住友林業</span>
+          <span class="chip active" data-filter="maker" data-value="飯田グループ"    onclick="toggleChip(this)">飯田グループ</span>
+          <span class="chip active" data-filter="maker" data-value="オープンハウス"  onclick="toggleChip(this)">オープンハウス</span>
+          <span class="chip active" data-filter="maker" data-value="旭化成ホームズ"  onclick="toggleChip(this)">旭化成ホームズ</span>
+          <span class="chip active" data-filter="maker" data-value="一条工務店"      onclick="toggleChip(this)">一条工務店</span>
+          <span class="chip active" data-filter="maker" data-value="ミサワホーム"    onclick="toggleChip(this)">ミサワホーム</span>
+          <span class="chip active" data-filter="maker" data-value="野村不動産"      onclick="toggleChip(this)">野村不動産</span>
+          <span class="chip active" data-filter="maker" data-value="三菱地所レジデンス" onclick="toggleChip(this)">三菱地所(ジオ)</span>
+          <span class="chip active" data-filter="maker" data-value="三井不動産レジデンシャル" onclick="toggleChip(this)">三井不動産</span>
+          <span class="chip active" data-filter="maker" data-value="住友不動産"      onclick="toggleChip(this)">住友不動産</span>
+          <span class="chip active" data-filter="maker" data-value="東急不動産"      onclick="toggleChip(this)">東急不動産</span>
+          <span class="chip active" data-filter="maker" data-value="三井のリハウス"  onclick="toggleChip(this)">三井のリハウス</span>
+          <span class="chip active" data-filter="maker" data-value="東急リバブル"    onclick="toggleChip(this)">東急リバブル</span>
+          <span class="chip active" data-filter="maker" data-value="グランディハウス" onclick="toggleChip(this)">グランディ</span>
+          <span class="chip active" data-filter="maker" data-value="ポラス"          onclick="toggleChip(this)">ポラス</span>
+          <span class="chip active" data-filter="maker" data-value="住宅情報館"      onclick="toggleChip(this)">住宅情報館</span>
+        </div>
+        <button onclick="document.querySelectorAll('[data-filter=maker]').forEach(c=>{c.classList.remove('active');activeMakers.delete(c.dataset.value)});render();updateMap();" style="font-size:11px;color:var(--text-sub);background:none;border:none;cursor:pointer;text-decoration:underline;margin-top:6px;padding:0;">すべて解除</button>
+        <button onclick="document.querySelectorAll('[data-filter=maker]').forEach(c=>{c.classList.add('active');activeMakers.add(c.dataset.value)});render();updateMap();" style="font-size:11px;color:var(--text-sub);background:none;border:none;cursor:pointer;text-decoration:underline;margin-top:6px;margin-left:8px;padding:0;">すべて選択</button>
+      </div>
+      <hr class="divider">
+      <div class="filter-section">
+        <div class="filter-label">ハウスメーカー公式</div>
+        <div class="site-links">
+          <a class="site-link" href="https://www.sekisuihouse.co.jp/bunjou/55shutoken/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>積水ハウス 首都圏</a>
+          <a class="site-link" href="https://www.daiwahouse.co.jp/bunjo/kanto/kanagawa.asp" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>大和ハウス 神奈川</a>
+          <a class="site-link" href="https://www.daiwahouse.co.jp/officeHP/kanto/index.asp" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>大和ハウス 関東</a>
+          <a class="site-link" href="https://sfc.jp/bunjyo/jutaku/area/?did=1" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>住友林業 関東</a>
+          <a class="site-link" href="https://sumaiida.com/ikkodate/kanto/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>飯田グループ「すまいーだ」関東</a>
+          <a class="site-link" href="https://oh.openhouse-group.com/s-kodate/tokyo/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>オープンハウス 東京</a>
+          <a class="site-link" href="https://www.asahi-kasei.co.jp/hebel/bunjyo/tokyo.shtml/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>旭化成ホームズ 東京</a>
+          <a class="site-link" href="https://www.ichijo.co.jp/land/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>一条工務店 分譲地</a>
+          <a class="site-link" href="https://www.misawa.co.jp/fudosan/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>ミサワホーム 分譲</a>
+          <a class="site-link" href="https://www.proud-web.jp/search/kanto/type/house/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>野村不動産 プラウドシーズン 関東</a>
+          <a class="site-link" href="https://www.mecsumai.com/search/list/kodate/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>三菱地所 ジオ・戸建</a>
+          <a class="site-link" href="https://www.31sumai.com/brand.html" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>三井不動産 ファインコート</a>
+          <a class="site-link" href="https://tochi.sumitomo-rd.co.jp/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>住友不動産 CITY GARDEN</a>
+          <a class="site-link" href="https://sumai.tokyu-land.co.jp/branz-g/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>東急不動産 ブランズガーデン</a>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="filter-section">
+        <div class="filter-label">物件サイトで探す</div>
+        <div class="site-links">
+          <a class="site-link" href="https://suumo.jp/ikkodate/tokyo/"    target="_blank"><i data-icon="external-link" style="font-size:12px"></i>SUUMO 東京</a>
+          <a class="site-link" href="https://suumo.jp/ikkodate/kanagawa/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>SUUMO 神奈川</a>
+          <a class="site-link" href="https://suumo.jp/ikkodate/chiba/"    target="_blank"><i data-icon="external-link" style="font-size:12px"></i>SUUMO 千葉</a>
+          <a class="site-link" href="https://www.athome.co.jp/kodate/shinchiku/kanagawa/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>アットホーム 神奈川</a>
+          <a class="site-link" href="https://www.athome.co.jp/kodate/chiba/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>アットホーム 千葉</a>
+          <a class="site-link" href="https://www.polus.jp/area/chiba/"    target="_blank"><i data-icon="external-link" style="font-size:12px"></i>ポラス 公式</a>
+          <a class="site-link" href="https://www.grandy.jp/kanagawaken/" target="_blank"><i data-icon="external-link" style="font-size:12px"></i>グランディハウス</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="tab-bar">
+        <div class="tab active" id="tab-list" onclick="switchTab('list')"><i data-icon="layout-grid"></i> 一覧</div>
+        <div class="tab" id="tab-map"  onclick="switchTab('map')"><i data-icon="map-pin"></i> 地図</div>
+        <div class="tab" id="tab-fav"  onclick="switchTab('fav')"><i data-icon="heart"></i> お気に入り<span class="fav-badge" id="fav-badge"></span></div>
+      </div>
+
+      <!-- List view -->
+      <div class="list-view" id="view-list">
+        <div class="ai-banner">
+          <i data-icon="info-circle"></i>
+          Web検索で収集した2026年6月時点の情報です。価格・詳細は各社サイトでご確認ください。
+        </div>
+        <div class="summary-row">
+          <div class="sumcard"><div class="sumcard-n" id="cnt-all">30</div><div class="sumcard-l">件表示中</div></div>
+          <div class="sumcard"><div class="sumcard-n">3</div><div class="sumcard-l">エリア</div></div>
+          <div class="sumcard"><div class="sumcard-n" id="cnt-makers">16</div><div class="sumcard-l">販売会社</div></div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="dot dot-tokyo"></span>東京</div>
+          <div class="legend-item"><span class="dot dot-kanagawa"></span>神奈川</div>
+          <div class="legend-item"><span class="dot dot-chiba"></span>千葉</div>
+        </div>
+        <div class="results-bar">
+          <span class="results-count" id="cnt-label">8件</span>
+          <select class="sort-sel" onchange="onSort(this.value)">
+            <option value="default">新着順</option>
+            <option value="price_asc">価格が安い順</option>
+            <option value="price_desc">価格が高い順</option>
+          </select>
+        </div>
+        <div class="card-grid" id="cardGrid"></div>
+      </div>
+
+      <!-- Map view -->
+      <div class="map-view" id="view-map">
+        <div id="map"></div>
+        <div class="map-list-panel" id="mapListPanel">
+          <div class="map-list-header">
+            <span id="map-count">8件</span>
+            <span style="font-size:11px;color:var(--text-sub);font-weight:400">ピンをクリックで詳細</span>
+          </div>
+          <div class="map-list-body" id="mapList"></div>
+        </div>
+      </div>
+
+      <!-- Fav view -->
+      <div class="fav-view" id="view-fav">
+        <div id="fav-content">
+          <div class="fav-empty"><i data-icon="heart"></i>一覧の ♡ ボタンでお気に入りに追加できます</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<!-- 物件データ（別ファイル管理。データ更新時はこのJSファイルだけ差し替えればOK） -->
+<script src="properties-data.js"></script>
+<script>
+let PROPERTIES = [];
+
+const AREA_COLOR = { '東京': '#534AB7', '神奈川': '#1D9E75', '千葉': '#BA7517' };
+const activeTypes  = new Set(['建売','土地']);
+const activeAreas  = new Set(['東京','神奈川','千葉']);
+/* activeMakers は fetch 完了後に JSON のデータから自動生成される */
+const activeMakers = new Set();
+const favIds = new Set();
+let priceLimit = 15000;
+let sortMode = 'default';
+let leafletMap = null;
+let markers = {};
+let selectedId = null;
+
+function getFiltered() {
+  let data = PROPERTIES.filter(p =>
+    activeTypes.has(p.type) &&
+    activeAreas.has(p.area) &&
+    activeMakers.has(p.maker) &&
+    p.price <= priceLimit
+  );
+  if (sortMode === 'price_asc') data.sort((a,b) => (a.price||99999) - (b.price||99999));
+  else if (sortMode === 'price_desc') data.sort((a,b) => (b.price||0) - (a.price||0));
+  return data;
+}
+
+function onPriceChange(v) {
+  priceLimit = parseInt(v);
+  document.getElementById('priceLabel').textContent = parseInt(v) >= 15000 ? '上限なし' : parseInt(v).toLocaleString() + '万円';
+  render(); updateMap();
+}
+
+function toggleChip(el) {
+  const f = el.dataset.filter, v = el.dataset.value;
+  el.classList.toggle('active');
+  const map = { type: activeTypes, area: activeAreas, maker: activeMakers };
+  if (el.classList.contains('active')) map[f].add(v); else map[f].delete(v);
+  render(); updateMap();
+}
+
+function onSort(v) { sortMode = v; render(); }
+
+/* ── List & cards ── */
+function dotClass(area) { return area==='東京'?'dot-tokyo':area==='神奈川'?'dot-kanagawa':'dot-chiba'; }
+
+function cardHTML(p, showFav=true) {
+  return `<div class="card">
+    <div class="card-img" style="background:${p.bg}">
+      ${p.isNew?'<span class="new-label">NEW</span>':''}
+      <i data-icon="${p.type==='土地'?'map-2':'home-2'}" class="icon"></i>
+      ${showFav?`<div class="card-fav ${favIds.has(p.id)?'faved':''}" onclick="toggleFav(${p.id},this)"><i data-icon="heart"></i></div>`:''}
+      <span class="type-tag ${p.type==='建売'?'tag-house':'tag-land'}">${p.type}</span>
+    </div>
+    <div class="card-body">
+      <div class="card-maker"><span class="dot ${dotClass(p.area)}"></span>${p.maker}</div>
+      <div class="card-name">${p.name}</div>
+      <div class="card-price">${p.priceLabel}</div>
+      <div class="card-meta">
+        <span><i data-icon="ruler-2" style="font-size:12px"></i>${p.area2}</span>
+        <span><i data-icon="train"   style="font-size:12px"></i>${p.station}</span>
+      </div>
+      <div class="card-completion">${p.completion}</div>
+    </div>
+    <a class="card-link" href="${p.url}" target="_blank" rel="noopener">詳細サイトを開く <i data-icon="external-link" style="font-size:13px"></i></a>
+  </div>`;
+}
+
+function render() {
+  const data = getFiltered();
+  document.getElementById('cnt-all').textContent = data.length;
+  document.getElementById('cnt-makers').textContent = new Set(data.map(p => p.maker)).size;
+  document.getElementById('cnt-label').textContent = data.length + '件';
+  document.getElementById('cardGrid').innerHTML = data.map(p => cardHTML(p)).join('');
+  applyIcons(document.getElementById('cardGrid'));
+}
+
+function toggleFav(id, el) {
+  if (favIds.has(id)) { favIds.delete(id); el.classList.remove('faved'); }
+  else { favIds.add(id); el.classList.add('faved'); }
+  const badge = document.getElementById('fav-badge');
+  if (favIds.size > 0) { badge.style.display='inline'; badge.textContent=favIds.size; } else { badge.style.display='none'; }
+  renderFav();
+}
+
+function renderFav() {
+  const favData = PROPERTIES.filter(p => favIds.has(p.id));
+  const el = document.getElementById('fav-content');
+  if (!favData.length) {
+    el.innerHTML = '<div class="fav-empty"><i data-icon="heart"></i>一覧の ♡ ボタンでお気に入りに追加できます</div>';
+  } else {
+    el.innerHTML = `<div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;">${favData.length}件のお気に入り</div><div class="card-grid">${favData.map(p=>cardHTML(p,false)).join('')}</div>`;
+  }
+  applyIcons(el);
+}
+
+/* ── Map ── */
+function initMap() {
+  if (leafletMap) return;
+  leafletMap = L.map('map', { center: [35.58, 139.72], zoom: 10 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 18
+  }).addTo(leafletMap);
+  PROPERTIES.forEach(p => {
+    const color = AREA_COLOR[p.area];
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="marker-pin marker-${p.area==='東京'?'tokyo':p.area==='神奈川'?'kanagawa':'chiba'}" style="background:${color}">${iconSVG(p.type==='土地'?'map-2':'home-2')}</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+      popupAnchor: [0, -32]
+    });
+    const popup = L.popup({ maxWidth: 240, minWidth: 220 }).setContent(popupHTML(p));
+    const m = L.marker([p.lat, p.lng], { icon }).addTo(leafletMap).bindPopup(popup);
+    m.on('click', () => selectProperty(p.id));
+    markers[p.id] = m;
+  });
+  updateMap();
+}
+
+function popupHTML(p) {
+  const color = AREA_COLOR[p.area];
+  return `<div class="popup-img" style="background:${p.bg}">${iconSVG(p.type==='土地'?'map-2':'home-2', 'width:28px;height:28px;color:rgba(0,0,0,0.15)')}</div>
+  <div class="popup-body">
+    <div class="popup-maker"><span class="dot ${dotClass(p.area)}"></span>${p.maker}<span class="popup-tag ${p.type==='建売'?'tag-house':'tag-land'}">${p.type}</span></div>
+    <div class="popup-name">${p.name}</div>
+    <div class="popup-price">${p.priceLabel}</div>
+    <div class="popup-meta">${iconSVG('train','width:12px;height:12px')} ${p.station}</div>
+  </div>
+  <a class="popup-link" href="${p.url}" target="_blank" rel="noopener">詳細サイトを開く ${iconSVG('external-link','width:13px;height:13px')}</a>`;
+}
+
+function updateMap() {
+  if (!leafletMap) return;
+  const data = getFiltered();
+  const ids = new Set(data.map(p => p.id));
+  document.getElementById('map-count').textContent = data.length + '件';
+  PROPERTIES.forEach(p => {
+    const m = markers[p.id];
+    if (!m) return;
+    if (ids.has(p.id)) { m.addTo(leafletMap); }
+    else { leafletMap.removeLayer(m); }
+  });
+  renderMapList(data);
+}
+
+function selectProperty(id) {
+  selectedId = id;
+  const p = PROPERTIES.find(x => x.id === id);
+  if (!p || !markers[id]) return;
+  leafletMap.setView([p.lat, p.lng], 14, { animate: true });
+  markers[id].openPopup();
+  document.querySelectorAll('.map-list-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.id) === id);
+  });
+}
+
+function renderMapList(data) {
+  const el = document.getElementById('mapList');
+  if (!data.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-hint);font-size:12px;">該当なし</div>'; return; }
+  el.innerHTML = data.map(p => `
+    <div class="map-list-item ${selectedId===p.id?'active':''}" data-id="${p.id}" onclick="selectProperty(${p.id})">
+      <div class="map-list-icon" style="background:${p.bg}"><i data-icon="${p.type==='土地'?'map-2':'home-2'}"></i></div>
+      <div class="map-list-info">
+        <div class="map-list-maker"><span class="dot ${dotClass(p.area)}" style="width:6px;height:6px;margin-right:2px"></span>${p.maker}</div>
+        <div class="map-list-name">${p.name}</div>
+        <div class="map-list-price">${p.priceLabel}</div>
+      </div>
+    </div>`).join('');
+  applyIcons(el);
+}
+
+/* ── Tab switching ── */
+function switchTab(name) {
+  ['list','map','fav'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    const v = document.getElementById('view-'+t);
+    if (t === name) {
+      v.style.display = t === 'map' ? 'block' : 'block';
+      if (t === 'map') { v.style.display = 'block'; setTimeout(() => { initMap(); leafletMap.invalidateSize(); }, 50); }
+    } else {
+      v.style.display = 'none';
+    }
+  });
+}
+
+/* ── Icon system (inline SVG, replaces icon font for iOS compatibility) ── */
+const ICONS = {
+  'building-estate': '<path d="M3 21l18 0"/><path d="M9 8l1 0"/><path d="M9 12l1 0"/><path d="M9 16l1 0"/><path d="M14 8l1 0"/><path d="M14 12l1 0"/><path d="M14 16l1 0"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16"/>',
+  'check': '<path d="M5 12l5 5l10 -10"/>',
+  'external-link': '<path d="M12 6l-7 0a2 2 0 0 0 -2 2l0 10a2 2 0 0 0 2 2l10 0a2 2 0 0 0 2 -2l0 -7"/><path d="M11 13l9 -9"/><path d="M15 4l5 0l0 5"/>',
+  'heart': '<path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>',
+  'info-circle': '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/>',
+  'layout-grid': '<path d="M4 4m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M4 15m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M15 4m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M15 15m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/>',
+  'map-pin': '<path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>',
+  'refresh': '<path d="M4 12v-3a4 4 0 0 1 4 -4h13m-3 -3l3 3l-3 3"/><path d="M20 12v3a4 4 0 0 1 -4 4h-13m3 3l-3 -3l3 -3"/>',
+  'ruler-2': '<path d="M3 17l6 -6"/><path d="M14 6l4 4"/><path d="M6 13l1.5 1.5"/><path d="M9 10l1.5 1.5"/><path d="M12 7l1.5 1.5"/><path d="M3.5 20.5l16 -16a2.121 2.121 0 0 0 -3 -3l-16 16a2.121 2.121 0 0 0 3 3z"/>',
+  'train': '<path d="M3 21h18"/><path d="M5 21v-15a3 3 0 0 1 3 -3h8a3 3 0 0 1 3 3v15"/><path d="M9 16h6"/><path d="M9 12h6"/><path d="M9 8h6"/><path d="M6 21l1 -3"/><path d="M18 21l-1 -3"/>',
+  'map-2': '<path d="M9 4v13"/><path d="M15 7v13"/><path d="M4 7l5 -3l6 3l5 -3v13l-5 3l-6 -3l-5 3z"/>',
+  'home-2': '<path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>',
+  'world-search': '<path d="M21 12a9 9 0 1 0 -9.972 8.948"/><path d="M3.6 9h16.8"/><path d="M3.6 15h8.4"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 2.07 8.282"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M20.2 20.2l1.8 1.8"/>',
+  'map': '<path d="M9 4v13"/><path d="M15 7v13"/><path d="M4 7l5 -3l6 3l5 -3v13l-5 3l-6 -3l-5 3z"/>'
+};
+function iconSVG(name, style) {
+  const path = ICONS[name];
+  if (!path) return '';
+  return `<svg class="icon" style="${style||''}" viewBox="0 0 24 24" width="1em" height="1em">${path}</svg>`;
+}
+function applyIcons(root) {
+  (root || document).querySelectorAll('i[data-icon]').forEach(el => {
+    const name = el.getAttribute('data-icon');
+    const path = ICONS[name];
+    if (!path) return;
+    const svgClasses = el.getAttribute('class') || '';
+    const inlineStyle = el.getAttribute('style') || '';
+    const svg = document.createElement('span');
+    svg.innerHTML = `<svg class="icon ${svgClasses}" style="${inlineStyle}" viewBox="0 0 24 24" width="1em" height="1em">${path}</svg>`;
+    el.replaceWith(svg.firstChild);
+  });
+}
+
+/* ── 初期化：properties-data.js の PROPERTIES_DATA を使って描画 ── */
+document.querySelectorAll('[data-filter="maker"].active').forEach(el => activeMakers.add(el.dataset.value));
+
+if (typeof PROPERTIES_DATA !== 'undefined') {
+  PROPERTIES = PROPERTIES_DATA;
+  render();
+  applyIcons();
+  document.getElementById('updated-date').textContent =
+    new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' }) + ' 更新';
+} else {
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c00">'
+    + '<b>データ読み込みエラー</b><br>properties-data.js が見つかりません。<br>'
+    + 'fudosan-matome.html と properties-data.js を同じフォルダに置いて開いてください。</div>';
+}
+</script>
+</body>
+</html>
