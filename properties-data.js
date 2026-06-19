@@ -1,3 +1,5 @@
+const PROPERTIES_UPDATED = '2025/6/19 10:00';
+
 const PROPERTIES_DATA = [
   {
     "id": 1,
