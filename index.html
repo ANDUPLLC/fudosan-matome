@@ -620,10 +620,8 @@ if (typeof PROPERTIES_DATA !== 'undefined') {
   // お気に入りバッジを復元
   const _badge = document.getElementById('fav-badge');
   if (favIds.size > 0) { _badge.style.display='inline'; _badge.textContent=favIds.size; renderFav(); }
-  const _now = new Date();
   document.getElementById('updated-date').textContent =
-    (_now.getMonth()+1) + '/' + _now.getDate() + ' ' +
-    String(_now.getHours()).padStart(2,'0') + ':' + String(_now.getMinutes()).padStart(2,'0');
+    (typeof PROPERTIES_UPDATED !== 'undefined') ? PROPERTIES_UPDATED : '不明';
   initCollapsible();
 } else {
   document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c00">'
